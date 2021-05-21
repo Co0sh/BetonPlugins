@@ -1,4 +1,4 @@
-package org.betonquest.betonquest.api.bukkit.config;
+package org.betonquest.betonquest.api.bukkit.config.custom;
 
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationOptions;

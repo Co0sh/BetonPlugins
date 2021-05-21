@@ -1,4 +1,4 @@
-package org.betonquest.betonquest.api.bukkit.config;
+package org.betonquest.betonquest.api.bukkit.config.custom;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -15,11 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class UnmodifiableConfigurationSection implements ConfigurationSection {
-
+public class ConfigurationSectionDecorator implements ConfigurationSection {
     protected final ConfigurationSection delegate;
 
-    public UnmodifiableConfigurationSection(final ConfigurationSection delegate) {
+    public ConfigurationSectionDecorator(final ConfigurationSection delegate) {
         this.delegate = delegate;
     }
 
@@ -65,13 +64,13 @@ public class UnmodifiableConfigurationSection implements ConfigurationSection {
     @Override
     public @Nullable
     Configuration getRoot() {
-        return new UnmodifiableConfiguration(delegate.getRoot());
+        return delegate.getRoot();
     }
 
     @Override
     public @Nullable
     ConfigurationSection getParent() {
-        return new UnmodifiableConfigurationSection(delegate.getParent());
+        return delegate.getParent();
     }
 
     @Override
@@ -88,19 +87,19 @@ public class UnmodifiableConfigurationSection implements ConfigurationSection {
 
     @Override
     public void set(@NotNull final String path, @Nullable final Object value) {
-        throw new UnsupportedOperationException("This config is unmodifiable");
+        delegate.set(path, value);
     }
 
     @Override
     public @NotNull
     ConfigurationSection createSection(@NotNull final String path) {
-        throw new UnsupportedOperationException("This config is unmodifiable");
+        return delegate.createSection(path);
     }
 
     @Override
     public @NotNull
     ConfigurationSection createSection(@NotNull final String path, @NotNull final Map<?, ?> map) {
-        throw new UnsupportedOperationException("This config is unmodifiable");
+        return delegate.createSection(path, map);
     }
 
     @Override
@@ -365,7 +364,7 @@ public class UnmodifiableConfigurationSection implements ConfigurationSection {
     @Override
     public @Nullable
     ConfigurationSection getConfigurationSection(@NotNull final String path) {
-        return new UnmodifiableConfigurationSection(delegate.getConfigurationSection(path));
+        return delegate.getConfigurationSection(path);
     }
 
     @Override
@@ -376,11 +375,11 @@ public class UnmodifiableConfigurationSection implements ConfigurationSection {
     @Override
     public @Nullable
     ConfigurationSection getDefaultSection() {
-        return new UnmodifiableConfigurationSection(delegate.getDefaultSection());
+        return delegate.getDefaultSection();
     }
 
     @Override
     public void addDefault(@NotNull final String path, @Nullable final Object value) {
-        throw new UnsupportedOperationException("This config is unmodifiable");
+        delegate.addDefault(path, value);
     }
 }
