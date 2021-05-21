@@ -1,5 +1,10 @@
 package org.betonquest.betonquest.api.bukkit.config;
 
+import org.betonquest.betonquest.api.bukkit.config.custom.DelegateSet;
+import org.betonquest.betonquest.api.bukkit.config.custom.DelegateSetConfiguration;
+import org.betonquest.betonquest.api.bukkit.config.custom.DelegateSetConfigurationSection;
+import org.betonquest.betonquest.api.bukkit.config.custom.UnmodifiableConfigurationSection;
+import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +26,8 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
 
     private final Map<String, List<ConfigurationSection>> keyList;
 
+    private final MultiConfigurationSetter setter;
+
     public MultiConfiguration(final ConfigurationSection... configs) throws KeyConflictConfigurationException {
         super();
         this.sourceConfigs = configs;
@@ -29,6 +36,7 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
         loadKeyList(sourceConfigs);
         validateMerge();
         merge();
+        this.setter = new MultiConfigurationSetter();
     }
 
     /**
@@ -88,16 +96,83 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
     }
 
     @Override
+    public @Nullable
+    Configuration getRoot() {
+        return new DelegateSetConfiguration(super.getRoot(), setter);
+    }
+
+    @Override
+    public @Nullable
+    ConfigurationSection getParent() {
+        return new DelegateSetConfigurationSection(super.getParent(), setter);
+    }
+
+    @Override
+    public @Nullable
+    Object get(@NotNull final String path) {
+        return new DelegateSetConfigurationSection(this, setter).get(path);
+    }
+
+    @Override
+    public @Nullable
+    Object get(@NotNull final String path, @Nullable final Object def) {
+        return new DelegateSetConfigurationSection(this, setter).get(path, def);
+    }
+
+    @Override
     public void set(@NotNull final String path, @Nullable final Object value) {
+        new DelegateSetConfigurationSection(this, setter).set(path, value);
+    }
+
+    @Override
+    public @NotNull
+    ConfigurationSection createSection(@NotNull final String path) {
+        return new DelegateSetConfigurationSection(this, setter).createSection(path);
+    }
+
+    @Override
+    public @NotNull
+    ConfigurationSection createSection(@NotNull final String path, @NotNull final Map<?, ?> map) {
+        return new DelegateSetConfigurationSection(this, setter).createSection(path, map);
+    }
+
+    @Override
+    public <T> T getObject(@NotNull final String path, @NotNull final Class<T> clazz) {
+        return new DelegateSetConfigurationSection(this, setter).getObject(path, clazz);
+    }
+
+    @Override
+    public <T> T getObject(@NotNull final String path, @NotNull final Class<T> clazz, @Nullable final T def) {
+        return new DelegateSetConfigurationSection(this, setter).getObject(path, clazz, def);
+    }
+
+    @Override
+    public @Nullable
+    ConfigurationSection getConfigurationSection(@NotNull final String path) {
+        return new DelegateSetConfigurationSection(this, setter).getConfigurationSection(path);
+    }
+
+    @Override
+    public @Nullable
+    ConfigurationSection getDefaultSection() {
+        return new DelegateSetConfigurationSection(this, setter).getDefaultSection();
+    }
+
+    @Override
+    public void addDefault(@NotNull final String path, @Nullable final Object value) {
+        new DelegateSetConfigurationSection(this, setter).addDefault(path, value);
+    }
+
+    private void checkAndSet(final @NotNull String path, final @Nullable Object value) {
         checkDuplicateKeys(path);
 
-        super.set(path, value);
         if (keyList.containsKey(path)) {
             keyList.get(path).get(0).set(path, value);
         } else {
             addToList(keyList, path, unassociatedKeys);
             unassociatedKeys.set(path, value);
         }
+        set(path, value);
     }
 
     private void checkDuplicateKeys(final @NotNull String path) {
@@ -112,5 +187,23 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
 
     public ConfigurationSection getUnassociatedKeys() {
         return new UnmodifiableConfigurationSection(unassociatedKeys);
+    }
+
+    private class MultiConfigurationSetter implements DelegateSet {
+        @Override
+        public void set(@NotNull final ConfigurationSection section, @NotNull final String path, @Nullable final Object value) {
+            checkAndSet(section.getCurrentPath() + "." + path, value);
+            section.set(path, value);
+        }
+
+        @Override
+        public ConfigurationSection createSection(@NotNull final ConfigurationSection section, @NotNull final String path) {
+            return null;
+        }
+
+        @Override
+        public ConfigurationSection createSection(@NotNull final ConfigurationSection section, @NotNull final String path, @NotNull final Map<?, ?> map) {
+            return null;
+        }
     }
 }
