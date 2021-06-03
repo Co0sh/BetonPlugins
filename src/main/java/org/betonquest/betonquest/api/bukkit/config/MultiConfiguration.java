@@ -1,5 +1,6 @@
 package org.betonquest.betonquest.api.bukkit.config;
 
+import com.sun.javafx.UnmodifiableArrayList;
 import org.betonquest.betonquest.api.bukkit.config.custom.DelegateSet;
 import org.betonquest.betonquest.api.bukkit.config.custom.DelegateSetConfiguration;
 import org.betonquest.betonquest.api.bukkit.config.custom.DelegateSetConfigurationSection;
@@ -10,12 +11,16 @@ import org.bukkit.configuration.MemoryConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 public class MultiConfiguration extends MemoryConfiguration implements ConfigurationSection {
@@ -23,6 +28,8 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
     private final ConfigurationSection[] sourceConfigs;
 
     private final ConfigurationSection unassociatedKeys;
+
+    private final Set<ConfigurationSection> unsavedConfigs;
 
     private final Map<String, List<ConfigurationSection>> keyList;
 
@@ -32,6 +39,7 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
         super();
         this.sourceConfigs = configs;
         this.unassociatedKeys = new MemoryConfiguration();
+        this.unsavedConfigs = new CopyOnWriteArraySet<>();
         this.keyList = new ConcurrentHashMap<>();
         loadKeyList();
         validateMerge();
@@ -91,7 +99,7 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
     }
 
     private void merge() {
-        keyList.forEach((key, value) -> set(key, value.get(0).get(key)));
+        keyList.forEach((key, value) -> super.set(key, value.get(0).get(key)));
     }
 
     @Override
@@ -166,12 +174,15 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
         checkDuplicateKeys(path);
 
         if (keyList.containsKey(path)) {
-            keyList.get(path).get(0).set(path, value);
+            ConfigurationSection config = keyList.get(path).get(0);
+            config.set(path, value);
+            if(config != unassociatedKeys) {
+                unsavedConfigs.add(config);
+            }
         } else {
             addToList(keyList, path, unassociatedKeys);
             unassociatedKeys.set(path, value);
         }
-        set(path, value);
     }
 
     private void checkDuplicateKeys(final @NotNull String path) {
@@ -182,6 +193,10 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
         if (!duplicates.isEmpty()) {
             throw new UncheckedKeyConflictConfigurationException(new KeyConflictConfigurationException(duplicates));
         }
+    }
+
+    public Set<ConfigurationSection> getUnsavedConfigs() {
+        return unsavedConfigs.stream().map(UnmodifiableConfigurationSection::new).collect(Collectors.toSet());
     }
 
     public ConfigurationSection getUnassociatedKeys() {
@@ -197,12 +212,12 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
 
         @Override
         public ConfigurationSection createSection(@NotNull final ConfigurationSection section, @NotNull final String path) {
-            return null;
+            return new DelegateSetConfigurationSection(MultiConfiguration.super.createSection(section.getCurrentPath() + "." + path), this);
         }
 
         @Override
         public ConfigurationSection createSection(@NotNull final ConfigurationSection section, @NotNull final String path, @NotNull final Map<?, ?> map) {
-            return null;
+            return new DelegateSetConfigurationSection(MultiConfiguration.super.createSection(section.getCurrentPath() + "." + path, map), this);
         }
     }
 }
