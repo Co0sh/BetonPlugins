@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class UnmodifiableConfigurationSection extends org.betonquest.betonquest.api.bukkit.config.custom.ConfigurationSectionDecorator {
+public class UnmodifiableConfigurationSection extends ConfigurationSectionDecorator {
 
     public UnmodifiableConfigurationSection(final ConfigurationSection delegate) {
         super(delegate);

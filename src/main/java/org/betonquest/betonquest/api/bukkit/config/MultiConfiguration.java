@@ -33,7 +33,7 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
         this.sourceConfigs = configs;
         this.unassociatedKeys = new MemoryConfiguration();
         this.keyList = new ConcurrentHashMap<>();
-        loadKeyList(sourceConfigs);
+        loadKeyList();
         validateMerge();
         merge();
         this.setter = new MultiConfigurationSetter();
@@ -54,10 +54,9 @@ public class MultiConfiguration extends MemoryConfiguration implements Configura
     /**
      * Extract all keys from all section and put them into a key to section-list map.
      *
-     * @param sourceConfigs configuration sections to load
      * @return key to section-list map of given configs
      */
-    private void loadKeyList(final ConfigurationSection... sourceConfigs) {
+    private void loadKeyList() {
         Arrays.stream(sourceConfigs).forEach(sourceConfig -> sourceConfig.getKeys(true).stream()
                 .filter(sectionKey -> !sourceConfig.isConfigurationSection(sectionKey))
                 .forEach(sectionKey -> addToList(keyList, sectionKey, sourceConfig)));
