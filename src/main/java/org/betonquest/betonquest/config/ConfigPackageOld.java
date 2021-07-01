@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CommentRequired", "PMD.AvoidLiteralsInIfCondition"})
 @CustomLog
-public class ConfigPackage {
+public class ConfigPackageOld {
 
     private final String name;
     private final File folder;
@@ -43,7 +43,7 @@ public class ConfigPackage {
      * @param name the name of this package
      */
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    public ConfigPackage(final File pack, final String name) {
+    public ConfigPackageOld(final File pack, final String name) {
         if (!pack.isDirectory()) {
             throw new IllegalArgumentException("The file '" + pack.getName() + "' is not a folder!");
         }
